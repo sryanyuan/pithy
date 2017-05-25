@@ -71,12 +71,13 @@ func (s *HTTPServer) AppendRouters(rts ...APIRouter) {
 
 	for _, v := range rts {
 		fn := wrapHTTPHandler(v.Handler())
-		Debugf("Register http router %s|%s", v.Path(), v.Method())
+		Debugf("Register http router [%s]%s", v.Method(), v.Path())
 		s.router.router.Path(apiVersionMatcher + v.Path()).Methods(v.Method()).Handler(fn)
 	}
 }
 
 func (s *HTTPServer) serve() {
+	defer s.wg.Done()
 	Infoln("HTTP serve @ ", s.listener.Addr().String())
 	s.svr.Handler = &s.router
 	if err := s.svr.Serve(s.listener); !strings.Contains(err.Error(), "use of closed network connection") {

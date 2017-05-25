@@ -4,12 +4,19 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"strings"
+
+	"strconv"
+
+	"io/ioutil"
+
 	"github.com/gorilla/mux"
 )
 
 type HTTPContext struct {
-	r *http.Request
-	w http.ResponseWriter
+	r    *http.Request
+	w    http.ResponseWriter
+	body []byte
 }
 
 type APIFunc func(*HTTPContext) *APIResult
@@ -24,7 +31,7 @@ func wrapHTTPHandler(fn APIFunc) http.HandlerFunc {
 		if nil == result {
 			result = NewAPIResult(0, 0, "")
 		}
-		ctx.WriteAPIResult(result)
+		ctx.writeAPIResult(result)
 	}
 }
 
@@ -36,18 +43,24 @@ func (c *HTTPContext) GetResponseWriter() http.ResponseWriter {
 	return c.w
 }
 
-func (c *HTTPContext) WriteAPIResult(result *APIResult) {
+func (c *HTTPContext) writeAPIResult(result *APIResult) {
+	if 0 != result.StatusCode {
+		c.w.WriteHeader(result.StatusCode)
+	}
+	// If raw is not nil, directly send raw bytes rather than sending json bytes of the result
+	if nil != result.RawBytes {
+		c.w.Write(result.RawBytes)
+		return
+	}
+	// Send json bytes of the result
 	if jsonBytes, err := json.Marshal(result); nil != err {
 		panic(err)
 	} else {
-		if 0 != result.StatusCode {
-			c.w.WriteHeader(result.StatusCode)
-		}
 		c.w.Write(jsonBytes)
 	}
 }
 
-func (c *HTTPContext) GetPathVar(key string) string {
+func (c *HTTPContext) GetPathVarString(key string) string {
 	vars := mux.Vars(c.r)
 	v, ok := vars[key]
 	if !ok {
@@ -56,6 +69,42 @@ func (c *HTTPContext) GetPathVar(key string) string {
 	return v
 }
 
+func (c *HTTPContext) GetPathVarInt64(key string, def int64) int64 {
+	sval := c.GetPathVarString(key)
+	if "" == sval {
+		return def
+	}
+	ival, err := strconv.ParseInt(sval, 10, 64)
+	if nil != err {
+		return def
+	}
+	return ival
+}
+
 func (c *HTTPContext) GetPathVersion() string {
-	return c.GetPathVar("version")
+	return c.GetPathVarString("version")
+}
+
+func (c *HTTPContext) GetFormValueString(key string) string {
+	c.r.ParseForm()
+	return c.r.FormValue(key)
+}
+
+func (c *HTTPContext) GetFormValueStringTrimBlank(key string) string {
+	v := c.GetFormValueString(key)
+	return strings.Trim(v, " ")
+}
+
+func (c *HTTPContext) ReadBody() ([]byte, error) {
+	if nil != c.body {
+		return c.body, nil
+	}
+	c.r.ParseForm()
+
+	data, err := ioutil.ReadAll(c.r.Body)
+	if nil != err {
+		return nil, err
+	}
+	c.body = data
+	return c.body, nil
 }
