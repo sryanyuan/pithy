@@ -85,6 +85,18 @@ func (c *HTTPContext) GetPathVersion() string {
 	return c.GetPathVarString("version")
 }
 
+func (c *HTTPContext) GetFormValueInt64(key string, def int64) int64 {
+	sval := c.GetFormValueStringTrimBlank(key)
+	if "" == sval {
+		return def
+	}
+	ival, err := strconv.ParseInt(sval, 10, 64)
+	if nil != err {
+		return def
+	}
+	return ival
+}
+
 func (c *HTTPContext) GetFormValueString(key string) string {
 	c.r.ParseForm()
 	return c.r.FormValue(key)
