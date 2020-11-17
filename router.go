@@ -11,8 +11,9 @@ import (
 
 // SwappableHandler is a http.Handler thats allows you to swap mux during working
 type SwappableHandler struct {
-	lock   sync.RWMutex
-	router *mux.Router
+	lock        sync.RWMutex
+	router      *mux.Router
+	enablePprof bool
 }
 
 // Swap swaps the router of the handler
@@ -35,7 +36,8 @@ func (h *SwappableHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h *SwappableHandler) filter(w http.ResponseWriter, r *http.Request) bool {
 	// pprof support, enable by default
-	if strings.HasPrefix(r.URL.Path, "/debug/pprof/") {
+	if h.enablePprof &&
+		strings.HasPrefix(r.URL.Path, "/debug/pprof") {
 		pprof.Index(w, r)
 		return true
 	}
@@ -47,4 +49,5 @@ type APIRouter interface {
 	Path() string
 	Method() string
 	Handler() APIFunc
+	Version() bool
 }
