@@ -120,3 +120,14 @@ func (c *HTTPContext) ReadBody() ([]byte, error) {
 	c.body = data
 	return c.body, nil
 }
+
+func (c *HTTPContext) UnmarshalJSONFromBody(i interface{}) error {
+	body, err := c.ReadBody()
+	if nil != err {
+		return err
+	}
+	if err = json.Unmarshal(body, i); nil != err {
+		return err
+	}
+	return nil
+}
