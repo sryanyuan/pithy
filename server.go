@@ -36,6 +36,10 @@ func NewHTTPServer(address string) *HTTPServer {
 	return svr
 }
 
+func (s *HTTPServer) EnablePprof() {
+	s.router.enablePprof = true
+}
+
 // Serve with the speicified address
 func (s *HTTPServer) Serve() error {
 	// Is router already set ?
@@ -57,6 +61,11 @@ func (s *HTTPServer) Serve() error {
 	return nil
 }
 
+// GetListener get the listener of the server
+func (s *HTTPServer) GetListener() net.Listener {
+	return s.listener
+}
+
 // Stop stops the server
 func (s *HTTPServer) Stop() {
 	s.listener.Close()
@@ -72,8 +81,20 @@ func (s *HTTPServer) AppendRouters(rts ...APIRouter) {
 	for _, v := range rts {
 		fn := wrapHTTPHandler(v.Handler())
 		Debugf("Register http router [%s]%s", v.Method(), v.Path())
-		s.router.router.Path(apiVersionMatcher + v.Path()).Methods(v.Method()).Handler(fn)
+		path := v.Path()
+		if v.Version() {
+			path = apiVersionMatcher + v.Path()
+		}
+		s.router.router.Path(path).Methods(v.Method()).Handler(fn)
 	}
+}
+
+// SetNotFoundHandler -
+func (s *HTTPServer) SetNotFoundHandler(h APIFunc) {
+	if nil == s.router.router {
+		return
+	}
+	s.router.router.NotFoundHandler = wrapHTTPHandler(h)
 }
 
 func (s *HTTPServer) serve() {
