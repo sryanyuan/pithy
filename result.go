@@ -9,6 +9,8 @@ type APIResult struct {
 	// For internal use
 	StatusCode int    `json:"-"`
 	RawBytes   []byte `json:"-"` // If raw is not nil, directly send raw bytes rather than sending json bytes of the result
+	// Original error
+	Err error `json:"-"`
 }
 
 func (r *APIResult) String() string {

@@ -39,6 +39,11 @@ func (c *HTTPContext) GetRequest() *http.Request {
 	return c.r
 }
 
+func (c *HTTPContext) SetRequest(r *http.Request) {
+	c.r = r
+	return
+}
+
 func (c *HTTPContext) GetResponseWriter() http.ResponseWriter {
 	return c.w
 }

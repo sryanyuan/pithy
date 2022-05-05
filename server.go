@@ -49,9 +49,20 @@ func (s *HTTPServer) Serve() error {
 	if "" == s.svr.Addr {
 		return ErrInvalidListenAddress
 	}
-	ls, err := net.Listen("tcp", s.svr.Addr)
-	if nil != err {
-		return err
+
+	var ls net.Listener
+	var err error
+
+	if strings.HasSuffix(s.svr.Addr, ".sock") {
+		ls, err = net.Listen("unix", s.svr.Addr)
+		if nil != err {
+			return err
+		}
+	} else {
+		ls, err = net.Listen("tcp", s.svr.Addr)
+		if nil != err {
+			return err
+		}
 	}
 
 	s.listener = ls
