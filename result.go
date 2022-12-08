@@ -4,8 +4,9 @@ import "fmt"
 
 // APIError holds the error code and error message for responding to request peer
 type APIResult struct {
-	Message    string `json:"message"`
-	ResultCode int    `json:"code"`
+	Message    string      `json:"message"`
+	ResultCode int         `json:"code"`
+	Data       interface{} `json:"data"`
 	// For internal use
 	StatusCode int    `json:"-"`
 	RawBytes   []byte `json:"-"` // If raw is not nil, directly send raw bytes rather than sending json bytes of the result
