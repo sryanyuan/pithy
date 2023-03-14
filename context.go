@@ -17,6 +17,8 @@ type HTTPContext struct {
 	r    *http.Request
 	w    http.ResponseWriter
 	body []byte
+	// Userdata
+	userdata map[string]interface{}
 }
 
 type APIFunc func(*HTTPContext) *APIResult
@@ -136,3 +138,22 @@ func (c *HTTPContext) UnmarshalJSONFromBody(i interface{}) error {
 	}
 	return nil
 }
+
+func (c *HTTPContext) SetUserData(key string, value interface{}) {
+	if c.userdata == nil {
+		c.userdata = make(map[string]interface{})
+	}
+	c.userdata[key] = value
+}
+
+func (c *HTTPContext) GetUserData(key string) interface{} {
+	if c.userdata == nil {
+		return nil
+	}
+	data, ok := c.userdata[key]
+	if !ok {
+		return nil
+	}
+	return data
+}
+
